@@ -1,0 +1,4 @@
+py-dactyl==1.1.4
+discord.py==1.7.3
+NBT==1.5.1
+PyYAML==6.0

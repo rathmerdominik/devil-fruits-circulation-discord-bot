@@ -12,6 +12,8 @@ import discord
 from discord import Message, TextChannel, Embed
 from discord.ext import tasks
 import datetime as dt
+from time import sleep
+
 
 GOLDEN_COLOR = 0xFFD700
 discord_client = discord.Client()
@@ -21,37 +23,46 @@ async def update_df_circulation():
     await discord_client.wait_until_ready()
     await discord_client.message.edit(embed=await build_formatted_message(discord_client.config, discord_client.nbt_data))
     print(f"Updated Devil Fruit Circulation {dt.datetime.today().strftime('%Y-%m-%d %H:%M:%S')}")
-    
+
     
 @discord_client.event
 async def on_ready():
-    try:
-        with open("config.yaml") as f:
-            config: dict = yaml.load(f, Loader=SafeLoader)
+    with open("config.yaml") as f:
+        config: dict = yaml.load(f, Loader=SafeLoader)
 
-        ptero_client: PterodactylClient = PterodactylClient(
-            config["ptero_server"], config["ptero_api_key"]
-        )
+    ptero_client: PterodactylClient = PterodactylClient(
+        config["ptero_server"], config["ptero_api_key"]
+    )
 
-        server_config: dict = await get_server_config(ptero_client)
-        server_id: str = server_config["server_id"]
-        
-        if "message_id" in server_config:
-            message_id: int = server_config["message_id"]
-        else:
-            message_id: None = None
-        
-        mine_mine_nbt_path: str = "{0}/data/mineminenomi.dat".format(config["world_name"])
-        nbt_data: nbt = await get_nbt_data(ptero_client, mine_mine_nbt_path, server_id)
+    server_config: dict = await get_server_config(ptero_client)
+    server_id: str = server_config["server_id"]
     
-        channel: TextChannel = discord_client.get_channel(config["discord_channel"])
-        message: Message = await get_editable_message(channel, nbt_data, config, message_id)
-        discord_client.message = message
-        discord_client.nbt_data = nbt_data
-        discord_client.config = config
-        update_df_circulation.start()
+    if "message_id" in server_config:
+        message_id: int = server_config["message_id"]
+    else:
+        message_id: None = None
+    
+    mine_mine_nbt_path: str = "{0}/data/mineminenomi.dat".format(config["world_name"])
+    nbt_data: nbt = await stall_until_nbt_data_exists(mine_mine_nbt_path, ptero_client, server_id)
+    
+    channel: TextChannel = discord_client.get_channel(config["discord_channel"])
+    message: Message = await get_editable_message(channel, nbt_data, config, message_id)
+    
+    discord_client.message = message
+    discord_client.nbt_data = nbt_data
+    discord_client.config = config
+    
+    update_df_circulation.start()
+    
+async def stall_until_nbt_data_exists(mine_mine_nbt_path: str, ptero_client: PterodactylClient, server_id: str)-> nbt:
+    try:
+        nbt_data: nbt = await get_nbt_data(ptero_client, mine_mine_nbt_path, server_id)
+        return nbt_data
+    
     except HTTPError as e:
-        print(f"Can not get file {e}. Maybe you should eat a fruit first?")
+        print("mineminenomi.dat not created. Wait for a player to eat a fruit first")
+        sleep(60)
+        stall_until_exists(mine_mine_nbt_path)
 
 
 async def get_editable_message(channel: TextChannel, nbt_data: nbt,config: dict, message_id: int) -> int:

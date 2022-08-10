@@ -55,13 +55,13 @@ async def on_ready():
         message_id: None = None
     
     mine_mine_nbt_path: str = "{0}/data/mineminenomi.dat".format(config["world_name"])
-    nbt_data: nbt = await stall_until_nbt_data_exists(mine_mine_nbt_path, ptero_client, server_id)
+    stall_until_nbt_data_exists.start()
+    nbt_data: nbt = discord_client.nbt_data
     
     channel: TextChannel = discord_client.get_channel(config["discord_channel"])
     message: Message = await get_editable_message(channel, nbt_data, config, message_id)
     
     discord_client.message = message
-    discord_client.nbt_data = nbt_data
     discord_client.config = config
     
     update_df_circulation.start()

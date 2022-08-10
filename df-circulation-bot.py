@@ -95,7 +95,7 @@ async def build_formatted_message(config: dict, nbt_data: nbt) -> Embed:
     all_fruits: list = await get_all_fruits()
     fruits_available:list = list(set(all_fruits) - set(taken_fruits))
     mapped_fruits: list = await get_mapped_devil_fruits(fruits_available)
-
+    
     golden_box = discord_client.get_emoji(1006270786287443978)
     iron_box = discord_client.get_emoji(1006326985934516285)
     wooden_box = discord_client.get_emoji(1006327000270655579)
@@ -108,16 +108,27 @@ async def build_formatted_message(config: dict, nbt_data: nbt) -> Embed:
     embed.set_footer(text="Circulation is updated every minute")
     
     # TODO may god help us. This definitly has to be refactored. No idea how
+    embed_formatted_fruits: list = []
     for fruit_mapped in mapped_fruits:
         for fruit_available in fruits_available:
             if fruit_available in list(fruit_mapped.keys()):
                 if fruit_mapped[fruit_available]['rarity'] == "golden_box":       
-                    embed.add_field(name=" \u200b",value="{rarity}\n{format_name}".format(rarity=golden_box, format_name=fruit_mapped[fruit_available]['format_name']), inline=True)
+                    embed_formatted_fruits.append("{rarity}{format_name}".format(rarity=golden_box, format_name=fruit_mapped[fruit_available]['format_name']))
                 elif fruit_mapped[fruit_available]['rarity'] == "iron_box":
-                    embed.add_field(name=" \u200b",value="{rarity}{format_name}".format(rarity=iron_box, format_name=fruit_mapped[fruit_available]['format_name']), inline=True)
+                    embed_formatted_fruits.append("{rarity}{format_name}".format(rarity=iron_box, format_name=fruit_mapped[fruit_available]['format_name']))
                 elif fruit_mapped[fruit_available]['rarity'] == "wooden_box":
-                    embed.add_field(name=" \u200b",value="{rarity}{format_name}".format(rarity=wooden_box, format_name=fruit_mapped[fruit_available]['format_name']), inline=True)
-                   
+                    embed_formatted_fruits.append("{rarity}{format_name}".format(rarity=wooden_box, format_name=fruit_mapped[fruit_available]['format_name']))
+    
+    formatted_fruits_to_add = []
+    for idx,formatted_fruit in enumerate(embed_formatted_fruits):
+        if idx != 0 and idx % 7 == 0:
+            embed.add_field(name=" \u200b", value="\n".join(formatted_fruits_to_add), inline=True)
+            formatted_fruits_to_add = []
+        else:
+            formatted_fruits_to_add.append(formatted_fruit)
+    if len(formatted_fruits_to_add) != 0:
+        embed.add_field(name=" \u200b", value="\n".join(formatted_fruits_to_add), inline=True)
+    
     return embed
 
 

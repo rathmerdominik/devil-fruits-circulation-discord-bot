@@ -21,19 +21,22 @@ discord_client = discord.Client()
 @tasks.loop(minutes=1)
 async def update_df_circulation():
     await discord_client.wait_until_ready()
+    await stall_until_nbt_data_exists.start()
     await discord_client.message.edit(embed=await build_formatted_message(discord_client.config, discord_client.nbt_data))
     print(f"Updated Devil Fruit Circulation {dt.datetime.today().strftime('%Y-%m-%d %H:%M:%S')}")
 
 @tasks.loop(seconds=10)
 async def stall_until_nbt_data_exists()-> nbt:
+    await discord_client.wait_until_ready()
+    
     nbt_data: nbt = {}
     try:
         discord_client.nbt_data  = await get_nbt_data(discord_client.ptero_client, discord_client.mine_mine_nbt_path, discord_client.server_id)
-        stall_until_nbt_data_exists.cancel()
+        stall_until_nbt_data_exists.stop()
         return
         
     except HTTPError as e:
-        print("mineminenomi.dat not created. Wait for a player to eat a fruit first")
+        print("mineminenomi.dat not existing. Wait for a player to choose a race")
         
 
 @discord_client.event
@@ -56,10 +59,8 @@ async def on_ready():
     discord_client.mine_mine_nbt_path: str = "{0}/data/mineminenomi.dat".format(config["world_name"])
     discord_client.server_id: str = server_id
     discord_client.ptero_client: PterodactylClient = ptero_client
-    stall_until_nbt_data_exists.start()
-    while stall_until_nbt_data_exists.is_running():
-        print("is running")
-        sleep(1)
+    await stall_until_nbt_data_exists.start()
+    
     nbt_data: nbt = discord_client.nbt_data
     channel: TextChannel = discord_client.get_channel(config["discord_channel"])
     message: Message = await get_editable_message(channel, nbt_data, config, message_id)
@@ -67,6 +68,7 @@ async def on_ready():
     discord_client.message = message
     discord_client.config = config
     
+    stall_until_nbt_data_exists.change_interval(seconds=0)
     update_df_circulation.start()
 
 
@@ -90,7 +92,7 @@ async def get_editable_message(channel: TextChannel, nbt_data: nbt,config: dict,
 
 async def build_formatted_message(config: dict, nbt_data: nbt) -> Embed:
     taken_fruits: list = await get_fruits_eaten(nbt_data) + await get_fruits_in_inventory(nbt_data)
-    all_fruits: list = await get_all_fruits(nbt_data)
+    all_fruits: list = await get_all_fruits()
     fruits_available:list = list(set(all_fruits) - set(taken_fruits))
     mapped_fruits: list = await get_mapped_devil_fruits(fruits_available)
 
@@ -110,7 +112,7 @@ async def build_formatted_message(config: dict, nbt_data: nbt) -> Embed:
         for fruit_available in fruits_available:
             if fruit_available in list(fruit_mapped.keys()):
                 if fruit_mapped[fruit_available]['rarity'] == "golden_box":       
-                    embed.add_field(name=" \u200b",value="{rarity}{format_name}".format(rarity=golden_box, format_name=fruit_mapped[fruit_available]['format_name']), inline=True)
+                    embed.add_field(name=" \u200b",value="{rarity}\n{format_name}".format(rarity=golden_box, format_name=fruit_mapped[fruit_available]['format_name']), inline=True)
                 elif fruit_mapped[fruit_available]['rarity'] == "iron_box":
                     embed.add_field(name=" \u200b",value="{rarity}{format_name}".format(rarity=iron_box, format_name=fruit_mapped[fruit_available]['format_name']), inline=True)
                 elif fruit_mapped[fruit_available]['rarity'] == "wooden_box":

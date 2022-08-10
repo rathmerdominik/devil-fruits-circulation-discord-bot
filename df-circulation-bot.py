@@ -62,7 +62,7 @@ async def stall_until_nbt_data_exists(mine_mine_nbt_path: str, ptero_client: Pte
     except HTTPError as e:
         print("mineminenomi.dat not created. Wait for a player to eat a fruit first")
         sleep(60)
-        stall_until_exists(mine_mine_nbt_path)
+        stall_until_nbt_data_exists(mine_mine_nbt_path, ptero_client, server_id)
 
 
 async def get_editable_message(channel: TextChannel, nbt_data: nbt,config: dict, message_id: int) -> int:

@@ -25,18 +25,17 @@ async def update_df_circulation():
     print(f"Updated Devil Fruit Circulation {dt.datetime.today().strftime('%Y-%m-%d %H:%M:%S')}")
 
 @tasks.loop(seconds=10)
-async def stall_until_nbt_data_exists(mine_mine_nbt_path: str, ptero_client: PterodactylClient, server_id: str)-> nbt:
+async def stall_until_nbt_data_exists()-> nbt:
     nbt_data: nbt = {}
     try:
-        discord_client.nbt_data  = await get_nbt_data(ptero_client, mine_mine_nbt_path, server_id)
+        discord_client.nbt_data  = await get_nbt_data(discord_client.ptero_client, discord_client.mine_mine_nbt_path, discord_client.server_id)
         stall_until_nbt_data_exists.cancel()
+        return
         
     except HTTPError as e:
         print("mineminenomi.dat not created. Wait for a player to eat a fruit first")
-        await stall_until_nbt_data_exists(mine_mine_nbt_path, ptero_client, server_id)
         
 
-    
 @discord_client.event
 async def on_ready():
     with open("config.yaml") as f:
@@ -54,10 +53,14 @@ async def on_ready():
     else:
         message_id: None = None
     
-    mine_mine_nbt_path: str = "{0}/data/mineminenomi.dat".format(config["world_name"])
+    discord_client.mine_mine_nbt_path: str = "{0}/data/mineminenomi.dat".format(config["world_name"])
+    discord_client.server_id: str = server_id
+    discord_client.ptero_client: PterodactylClient = ptero_client
     stall_until_nbt_data_exists.start()
+    while stall_until_nbt_data_exists.is_running():
+        print("is running")
+        sleep(1)
     nbt_data: nbt = discord_client.nbt_data
-    
     channel: TextChannel = discord_client.get_channel(config["discord_channel"])
     message: Message = await get_editable_message(channel, nbt_data, config, message_id)
     

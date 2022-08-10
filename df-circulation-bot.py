@@ -1,5 +1,6 @@
 import pydactyl
-from pydactyl import PterodactylClient
+from pydactyl import PterodactylClient 
+from requests import HTTPError
 import yaml
 from yaml.loader import SafeLoader
 import os
@@ -24,33 +25,36 @@ async def update_df_circulation():
     
 @discord_client.event
 async def on_ready():
-    with open("config.yaml") as f:
-        config: dict = yaml.load(f, Loader=SafeLoader)
+    try:
+        with open("config.yaml") as f:
+            config: dict = yaml.load(f, Loader=SafeLoader)
 
-    ptero_client: PterodactylClient = PterodactylClient(
-        config["ptero_server"], config["ptero_api_key"]
-    )
+        ptero_client: PterodactylClient = PterodactylClient(
+            config["ptero_server"], config["ptero_api_key"]
+        )
 
-    server_config: dict = await get_server_config(ptero_client)
-    server_id: str = server_config["server_id"]
-    
-    if "message_id" in server_config:
-        message_id: int = server_config["message_id"]
-    else:
-        message_id: None = None
+        server_config: dict = await get_server_config(ptero_client)
+        server_id: str = server_config["server_id"]
         
-    mine_mine_nbt_path: str = "{0}/data/mineminenomi.dat".format(config["world_name"])
-    nbt_data: nbt = await get_nbt_data(ptero_client, mine_mine_nbt_path, server_id)
+        if "message_id" in server_config:
+            message_id: int = server_config["message_id"]
+        else:
+            message_id: None = None
+        
+        mine_mine_nbt_path: str = "{0}/data/mineminenomi.dat".format(config["world_name"])
+        nbt_data: nbt = await get_nbt_data(ptero_client, mine_mine_nbt_path, server_id)
+    
+        channel: TextChannel = discord_client.get_channel(config["discord_channel"])
+        message: Message = await get_editable_message(channel, nbt_data, config, message_id)
+        discord_client.message = message
+        discord_client.nbt_data = nbt_data
+        discord_client.config = config
+        update_df_circulation.start()
+    except HTTPError as e:
+        print(f"Can not get file {e}. Maybe you should eat a fruit first?")
 
-    channel: TextChannel = discord_client.get_channel(config["discord_channel"])
-    message: Message = await get_editable_message(channel, nbt_data, config, message_id)
-    discord_client.message = message
-    discord_client.nbt_data = nbt_data
-    discord_client.config = config
-    update_df_circulation.start()
 
-
-async def get_editable_message(channel: TextChannel, nbt_data: nbt,config: dict, message_id: int | None) -> int:
+async def get_editable_message(channel: TextChannel, nbt_data: nbt,config: dict, message_id: int) -> int:
     try:
         if not message_id:
             embed: Embed = await build_formatted_message(config, nbt_data)
@@ -219,7 +223,6 @@ if __name__ == "__main__":
     #TODO Readme
     with open("config.yaml") as f:
         config: dict = yaml.load(f, Loader=SafeLoader)
-
     try:
         discord_client.run(config["discord_api_key"])
     except KeyboardInterrupt:

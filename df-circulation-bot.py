@@ -18,7 +18,7 @@ from time import sleep
 GOLDEN_COLOR = 0xFFD700
 discord_client = discord.Client()
 
-@tasks.loop(minutes=1)
+@tasks.loop(minutes=5)
 async def update_df_circulation():
     await discord_client.wait_until_ready()
     await stall_until_nbt_data_exists.start()
@@ -68,7 +68,6 @@ async def on_ready():
     discord_client.message = message
     discord_client.config = config
     
-    stall_until_nbt_data_exists.change_interval(seconds=0)
     update_df_circulation.start()
 
 
@@ -91,7 +90,8 @@ async def get_editable_message(channel: TextChannel, nbt_data: nbt,config: dict,
     return message
 
 async def build_formatted_message(config: dict, nbt_data: nbt) -> Embed:
-    taken_fruits: list = await get_fruits_eaten(nbt_data) + await get_fruits_in_inventory(nbt_data)
+    taken_fruits: list = await get_fruits_eaten(nbt_data) + await get_fruits_in_inventory(nbt_data) + await get_fruits_in_world(nbt_data)
+    print(taken_fruits)
     all_fruits: list = await get_all_fruits()
     fruits_available:list = list(set(all_fruits) - set(taken_fruits))
     mapped_fruits: list = await get_mapped_devil_fruits(fruits_available)
@@ -105,10 +105,11 @@ async def build_formatted_message(config: dict, nbt_data: nbt) -> Embed:
         description="__**All available Devil Fruits**__",
         color=GOLDEN_COLOR
     )
-    embed.set_footer(text="Circulation is updated every minute")
+    embed.set_footer(text="Circulation is updated every 5 minutes")
     
     # TODO may god help us. This definitly has to be refactored. No idea how
     embed_formatted_fruits: list = []
+
     for fruit_mapped in mapped_fruits:
         for fruit_available in fruits_available:
             if fruit_available in list(fruit_mapped.keys()):
@@ -119,7 +120,9 @@ async def build_formatted_message(config: dict, nbt_data: nbt) -> Embed:
                 elif fruit_mapped[fruit_available]['rarity'] == "wooden_box":
                     embed_formatted_fruits.append("{rarity}{format_name}".format(rarity=wooden_box, format_name=fruit_mapped[fruit_available]['format_name']))
     
+
     formatted_fruits_to_add = []
+    
     for idx,formatted_fruit in enumerate(embed_formatted_fruits):
         if idx != 0 and idx % 7 == 0:
             embed.add_field(name=" \u200b", value="\n".join(formatted_fruits_to_add), inline=True)
@@ -239,7 +242,10 @@ async def get_all_fruits() -> list:
             for fruit in fruit_prop.keys():
                 fruits.append(fruit)
     return fruits
- 
+
+async def get_fruits_in_world(nbt_data: nbt) -> list:
+    return [str(i) for i in nbt_data["data"]["devilFruits"].tags]
+
 
 async def get_nbt_data(
     ptero_client: PterodactylClient, mine_mine_nbt_path: str, server_id: str

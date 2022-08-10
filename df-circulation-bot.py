@@ -55,14 +55,15 @@ async def on_ready():
     update_df_circulation.start()
     
 async def stall_until_nbt_data_exists(mine_mine_nbt_path: str, ptero_client: PterodactylClient, server_id: str)-> nbt:
+    nbt_data: nbt = {}
     try:
         nbt_data: nbt = await get_nbt_data(ptero_client, mine_mine_nbt_path, server_id)
-        return nbt_data
-    
     except HTTPError as e:
         print("mineminenomi.dat not created. Wait for a player to eat a fruit first")
         sleep(60)
-        stall_until_nbt_data_exists(mine_mine_nbt_path, ptero_client, server_id)
+        await stall_until_nbt_data_exists(mine_mine_nbt_path, ptero_client, server_id)
+    return nbt_data
+
 
 
 async def get_editable_message(channel: TextChannel, nbt_data: nbt,config: dict, message_id: int) -> int:

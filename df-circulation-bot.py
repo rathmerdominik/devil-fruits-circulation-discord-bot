@@ -24,6 +24,18 @@ async def update_df_circulation():
     await discord_client.message.edit(embed=await build_formatted_message(discord_client.config, discord_client.nbt_data))
     print(f"Updated Devil Fruit Circulation {dt.datetime.today().strftime('%Y-%m-%d %H:%M:%S')}")
 
+@tasks.loop(seconds=10)
+async def stall_until_nbt_data_exists(mine_mine_nbt_path: str, ptero_client: PterodactylClient, server_id: str)-> nbt:
+    nbt_data: nbt = {}
+    try:
+        discord_client.nbt_data  = await get_nbt_data(ptero_client, mine_mine_nbt_path, server_id)
+        stall_until_nbt_data_exists.cancel()
+        
+    except HTTPError as e:
+        print("mineminenomi.dat not created. Wait for a player to eat a fruit first")
+        await stall_until_nbt_data_exists(mine_mine_nbt_path, ptero_client, server_id)
+        
+
     
 @discord_client.event
 async def on_ready():
@@ -53,17 +65,6 @@ async def on_ready():
     discord_client.config = config
     
     update_df_circulation.start()
-    
-async def stall_until_nbt_data_exists(mine_mine_nbt_path: str, ptero_client: PterodactylClient, server_id: str)-> nbt:
-    nbt_data: nbt = {}
-    try:
-        nbt_data: nbt = await get_nbt_data(ptero_client, mine_mine_nbt_path, server_id)
-    except HTTPError as e:
-        print("mineminenomi.dat not created. Wait for a player to eat a fruit first")
-        sleep(60)
-        await stall_until_nbt_data_exists(mine_mine_nbt_path, ptero_client, server_id)
-    return nbt_data
-
 
 
 async def get_editable_message(channel: TextChannel, nbt_data: nbt,config: dict, message_id: int) -> int:
@@ -211,11 +212,17 @@ async def get_fruits_in_inventory(nbt_data: nbt) -> list:
 async def get_fruits_eaten(nbt_data: nbt) -> list:
     return [str(i) for i in nbt_data["data"]["ateDevilFruits"].tags]
 
-async def get_all_fruits(nbt_data: nbt) -> list:
+async def get_all_fruits() -> list:
     fruits: list = []
-    for tag in nbt_data["data"]["devilFruits"]:
-        fruits.append(tag)
-    return [str(i) for i in fruits]
+    fruit_map: dict = {}
+    with open("resources/fruits_config/fruits.json", "r") as f:
+        fruit_map = json.load(f)
+        
+    for rarity in fruit_map.keys():
+        for fruit_prop in fruit_map[rarity]:
+            for fruit in fruit_prop.keys():
+                fruits.append(fruit)
+    return fruits
  
 
 async def get_nbt_data(

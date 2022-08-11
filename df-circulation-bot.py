@@ -91,7 +91,6 @@ async def get_editable_message(channel: TextChannel, nbt_data: nbt,config: dict,
 
 async def build_formatted_message(config: dict, nbt_data: nbt) -> Embed:
     taken_fruits: list = await get_fruits_eaten(nbt_data) + await get_fruits_in_inventory(nbt_data) + await get_fruits_in_world(nbt_data)
-    print(taken_fruits)
     all_fruits: list = await get_all_fruits()
     fruits_available:list = list(set(all_fruits) - set(taken_fruits))
     mapped_fruits: list = await get_mapped_devil_fruits(fruits_available)
@@ -107,9 +106,24 @@ async def build_formatted_message(config: dict, nbt_data: nbt) -> Embed:
     )
     embed.set_footer(text="Circulation is updated every 5 minutes")
     
-    # TODO may god help us. This definitly has to be refactored. No idea how
     embed_formatted_fruits: list = []
-
+    
+    golden_arr: list = []
+    iron_arr: list = []
+    wooden_arr: list = [] 
+    
+    for fruit_mapped in mapped_fruits:
+        for fruit_available in fruits_available:
+            if fruit_available in list(fruit_mapped.keys()):
+                if fruit_mapped[fruit_available]['rarity'] == "golden_box": 
+                    golden_arr.append(fruit_mapped)      
+                elif fruit_mapped[fruit_available]['rarity'] == "iron_box":
+                    iron_arr.append(fruit_mapped)      
+                elif fruit_mapped[fruit_available]['rarity'] == "wooden_box":
+                    wooden_arr.append(fruit_mapped)      
+    mapped_fruits = golden_arr + iron_arr + wooden_arr
+    
+    # TODO may god help us. This definitly has to be refactored. No idea how
     for fruit_mapped in mapped_fruits:
         for fruit_available in fruits_available:
             if fruit_available in list(fruit_mapped.keys()):
@@ -119,10 +133,9 @@ async def build_formatted_message(config: dict, nbt_data: nbt) -> Embed:
                     embed_formatted_fruits.append("{rarity}{format_name}".format(rarity=iron_box, format_name=fruit_mapped[fruit_available]['format_name']))
                 elif fruit_mapped[fruit_available]['rarity'] == "wooden_box":
                     embed_formatted_fruits.append("{rarity}{format_name}".format(rarity=wooden_box, format_name=fruit_mapped[fruit_available]['format_name']))
-    
+                    
+    formatted_fruits_to_add: list = []
 
-    formatted_fruits_to_add = []
-    
     for idx,formatted_fruit in enumerate(embed_formatted_fruits):
         if idx != 0 and idx % 7 == 0:
             embed.add_field(name=" \u200b", value="\n".join(formatted_fruits_to_add), inline=True)

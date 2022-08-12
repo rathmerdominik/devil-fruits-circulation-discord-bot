@@ -1,4 +1,5 @@
+git+https://github.com/Rapptz/discord.py.git@0e386ec2ccfa6b131ab0ebd782d1ccd50bf08470
 py-dactyl==1.1.4
-discord.py==1.7.3
 NBT==1.5.1
 PyYAML==6.0
+pydantic

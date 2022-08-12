@@ -1,5 +1,5 @@
-world_name: "world"
-ptero_server: null
-ptero_api_key: null
-discord_channel: null
-discord_api_key: null
+world_name: "world" # Name of the world save
+discord_api_key: "" # Token of the Discord Bot
+ptero_server_id: "" # ID of the pterodactyl server
+ptero_server: ""    # Something of the pterodactyl server
+ptero_api_key: ""   # API Key of the pterodactyl server

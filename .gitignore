@@ -2,3 +2,4 @@ venv
 config.yaml
 server.json
 mineminenomi*
+__pycache__

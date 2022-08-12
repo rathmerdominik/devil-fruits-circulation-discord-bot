@@ -27,32 +27,33 @@ class TreasureMiner(commands.Bot):
         self.load_config()
 
     def load_config(self):
-        # Load bot's configurations
+        """Loads the bot's config."""
         config = yaml.safe_load(open("config.yaml"))
         self.config = BotConfig(**config)
 
     async def setup_constants(self):
-        # Setup constants for the bot to use
+        """Sets up bot's constants."""
         self._last_exception = None
         self.constants = Object()
         self.GOLDEN_COLOR = 0xFFD700
-        # self.constants.ptero_client = PterodactylClient(
-        #     self.config.ptero_server, self.config.ptero_api_key
-        # )
+        self.constants.ptero_client = PterodactylClient(
+            self.config.ptero_server, self.config.ptero_api_key
+        )
 
     async def load_modules(self):
-        # Loads bot's modules
+        """Loads all modules."""
         for module in get_modules(self.modules_path):
             await self.load_extension(module.spec)
             print(f"Loaded module {module.name}")
 
     async def setup_hook(self):
-        # Things to do when the bot is ready to go
+        """Bot's startup function."""
         await self.setup_constants()
         await self.load_modules()
         asyncio.create_task(self.change_status())
 
     async def change_status(self):
+        """Changes the bot's status after a successful startup."""
         await self.wait_until_ready()
         await self.change_presence(status=discord.Status.online)
 
@@ -61,6 +62,7 @@ class TreasureMiner(commands.Bot):
         super().run(self.config.discord_api_key, **kwargs)
 
     async def on_message(self, message):
+        """Handles messages and commands sent to the bot by owners."""
         if message.author.id not in self.bot.config.bot_owners:
             return
         await self.process_commands(message)

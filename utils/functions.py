@@ -1,5 +1,6 @@
 from io import BytesIO
 from pathlib import Path
+from typing import Iterable
 
 import yaml
 from discord.utils import get
@@ -7,15 +8,17 @@ from nbt import nbt
 from nbt.nbt import TAG_Compound, TAG_Int, TAG_List, TAG_Long, TAG_String
 from pydactyl import PterodactylClient
 
-from utils.objects import DevilFruit, Module
+from utils.objects import BotConfig, DevilFruit, Module
 
 
-def chunks(l, n):
+def chunks(l: Iterable, n: int) -> Iterable:
+    """Yield successive n-sized chunks from list."""
     for i in range(0, len(l), n):
         yield l[i : i + n]
 
 
 def convert_nbt_to_dict(data: nbt.NBTFile) -> dict:
+    """Convert nbt file to dict."""
     as_dict = {}
     for key, value in data.iteritems():
         if isinstance(value, TAG_Compound):
@@ -32,6 +35,7 @@ def convert_nbt_to_dict(data: nbt.NBTFile) -> dict:
 def get_ptero_file(
     ptero_client: PterodactylClient, path: str, server_id: str
 ) -> nbt.NBTFile:
+    """Get a nbt file from pterodactyl server."""
     mine_mine_nbt_file = ptero_client.client.servers.files.get_file_contents(
         server_id,
         path,
@@ -39,14 +43,16 @@ def get_ptero_file(
     return nbt.NBTFile(fileobj=BytesIO(mine_mine_nbt_file))
 
 
-async def load_nbt(config, path) -> nbt.NBTFile:
+async def load_nbt(config: BotConfig, path: str) -> nbt.NBTFile:
+    """Load a nbt file."""
     try:
         return get_ptero_file(config.ptero_client, path, config.server_id)
     except Exception as e:
         print("mineminenomi.dat not existing. Wait for a player to choose a race")
 
 
-def yaml_load(path: Path, config_name="config.yaml") -> dict:
+def yaml_load(path: Path, config_name: str = "config.yaml") -> dict:
+    """Load a yaml file as a dict."""
     config = path.joinpath(config_name)
     if not config.exists():
         raise Exception(config_name)
@@ -54,6 +60,7 @@ def yaml_load(path: Path, config_name="config.yaml") -> dict:
 
 
 def list_devil_fruits(data: dict):
+    """List all devil fruits."""
     for rarity, fruits in data.items():
         for fruit in fruits:
             for qualified_name, devil_fruit in fruit.items():
@@ -63,18 +70,22 @@ def list_devil_fruits(data: dict):
 
 
 def list_golden_devil_fruits(data: list[DevilFruit]):
+    """List all golden box devil fruits."""
     return list(filter(lambda x: x.rarity == "golden_box", data))
 
 
 def list_iron_devil_fruits(data: list[DevilFruit]):
+    """List all iron box devil fruits."""
     return list(filter(lambda x: x.rarity == "iron_box", data))
 
 
 def list_wooden_devil_fruits(data: list[DevilFruit]):
+    """List all wooden box devil fruits."""
     return list(filter(lambda x: x.rarity == "wooden_box", data))
 
 
 def list_eaten_fruits(data: list[DevilFruit], nbt_data: dict):
+    """List all devil fruits eaten by players."""
     eaten_fruits = nbt_data["data"].get("ateDevilFruits")
     if eaten_fruits is None:
         return []
@@ -87,6 +98,7 @@ def list_eaten_fruits(data: list[DevilFruit], nbt_data: dict):
 
 
 def list_inventory_fruits(data: list[DevilFruit], nbt_data: dict):
+    """List all devil fruits in inventories."""
     inventory_fruits = nbt_data["data"].get("devilFruitsInInventories", [])
     fruits = []
     for inventory in inventory_fruits:
@@ -96,6 +108,7 @@ def list_inventory_fruits(data: list[DevilFruit], nbt_data: dict):
     return fruits
 
 
-def get_modules(path: Path):
+def get_modules(path: Path) -> Iterable[Module]:
+    """Get all modules in the modules folder recursively."""
     for module in path.rglob("*.py"):
         yield Module(base_path=path.parent, path=module)

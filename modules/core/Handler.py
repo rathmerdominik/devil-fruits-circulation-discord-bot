@@ -9,6 +9,7 @@ class Handler(commands.Cog):
 
     @commands.Cog.listener("on_message")
     async def on_message(self, message):
+        """Handle messages and commands."""
         if message.author.bot:
             return
         ctx = await self.bot.get_context(message)
@@ -23,6 +24,7 @@ class Handler(commands.Cog):
 
     @commands.Cog.listener("on_command_error")
     async def on_command_error(self, ctx, error):
+        """The event triggered when an error is raised while invoking a command."""
         if isinstance(error, commands.CommandNotFound):
             return
 

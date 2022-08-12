@@ -39,6 +39,7 @@ class Owner(commands.Cog):
     @commands.command(hidden=True)
     @is_bot_owner()
     async def parse(self, ctx):
+        """Parse a bit of code as a command."""
         code = re.findall(r"(?i)(?s)```py\n(.*?)```", ctx.message.content)
         if not code:
             return await ctx.send("No code detected.", ephemeral=True)
@@ -81,6 +82,7 @@ class Owner(commands.Cog):
     )
     @is_bot_owner()
     async def last_exception(self, ctx):
+        """Shows the last exception."""
         if self.bot._last_exception:
             view = Traceback(ctx, self.bot._last_exception)
             await ctx.send(content="Last error...", view=view, ephemeral=True)
@@ -91,6 +93,7 @@ class Owner(commands.Cog):
     @commands.hybrid_command(name="sync", description="Sync the bot's slash commands.")
     @is_bot_owner()
     async def sync(self, ctx):
+        """Sync the bot's slash commands."""
         guild = discord.Object(id=self.bot.config.discord_server_id)
         self.bot.tree.copy_global_to(guild=guild)
         await self.bot.tree.sync(guild=guild)

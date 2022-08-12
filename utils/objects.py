@@ -36,19 +36,19 @@ class Module(BaseModel):
     path: Path
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self.path.stem
 
     @property
-    def qualified_name(self):
+    def qualified_name(self) -> str:
         return self.path.name
 
     @property
-    def relative_path(self):
+    def relative_path(self) -> Path:
         return self.path.relative_to(Path.cwd())
 
     @property
-    def spec(self):
+    def spec(self) -> str:
         return ".".join(
             str(self.path.relative_to(self.base_path)).split(os.sep)
         ).replace(".py", "")

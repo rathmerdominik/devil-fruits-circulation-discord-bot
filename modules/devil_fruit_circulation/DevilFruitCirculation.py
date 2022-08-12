@@ -18,7 +18,9 @@ from utils.functions import (
 from utils.objects import DFCircConfig
 
 
-class DevCirc(commands.Cog):
+class devil_fruit_circulation(commands.Cog):
+    """A module for Devil Fruit Circulation."""
+
     def __init__(self, bot):
         self.bot = bot
         self.config = DFCircConfig(**yaml_load(Path(__file__).parent))
@@ -31,6 +33,7 @@ class DevCirc(commands.Cog):
         asyncio.create_task(self.startup())
 
     async def startup(self):
+        """Sets up constants and starts the module's."""
         await self.bot.wait_until_ready()
         self.channel = self.bot.get_channel(self.config.channel)
         self.golden_box_emoji = self.bot.get_emoji(self.config.golden_box)
@@ -42,6 +45,7 @@ class DevCirc(commands.Cog):
         self.update_df_circulation.cancel()
 
     async def get_editable_message(self):
+        """Gets a message that can be edited from the specified channel."""
         if self.channel is None:
             raise Exception(
                 "\nUnable to start updating devil fruit circulation, no channel found with ID {0}\n"
@@ -60,6 +64,7 @@ class DevCirc(commands.Cog):
 
     @tasks.loop(minutes=5)
     async def update_df_circulation(self):
+        """Updates the devil fruit circulation every 5 minutes."""
         nbt_data = await load_nbt(self.bot.config, self.nbt_path)
         if nbt_data is None:
             print("Unable to read NBT data, was it loaded?")
@@ -85,6 +90,7 @@ class DevCirc(commands.Cog):
         )
 
     def build_formatted_message(self, fruit_data: dict) -> Embed:
+        """Builds the formatted message to be sent to the channel."""
         embed: Embed = Embed(
             title="{g}{i}{w}Current Devilfruit Circulation{w}{i}{g}".format(
                 g=self.golden_box_emoji,
@@ -114,4 +120,4 @@ class DevCirc(commands.Cog):
 
 
 async def setup(bot):
-    await bot.add_cog(DevCirc(bot))
+    await bot.add_cog(devil_fruit_circulation(bot))

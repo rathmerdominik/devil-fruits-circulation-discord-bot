@@ -61,6 +61,9 @@ class DevCirc(commands.Cog):
     @tasks.loop(minutes=5)
     async def update_df_circulation(self):
         nbt_data = await load_nbt(self.bot.config, self.nbt_path)
+        if nbt_data is None:
+            print("Unable to read NBT data, was it loaded?")
+            return
         fruit_data = convert_nbt_to_dict(nbt_data)
         update = self.build_formatted_message(fruit_data)
         if not hasattr(self, "df_message"):

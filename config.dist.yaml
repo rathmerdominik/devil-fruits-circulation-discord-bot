@@ -1,5 +1,13 @@
+# Minecraft #
 world_name: "world" # Name of the world save
-discord_api_key: "" # Token of the Discord Bot
+
+# Pterodactyl #
 ptero_server_id: "" # ID of the pterodactyl server
 ptero_server: ""    # Something of the pterodactyl server
 ptero_api_key: ""   # API Key of the pterodactyl server
+
+# Discord #
+discord_api_key: "" # Token of the Discord Bot
+discord_server_id: 876845404837269555 # ID of the server the bot will be on
+bot_owners:         # People who can use owner commands on bot
+  - 565097923025567755

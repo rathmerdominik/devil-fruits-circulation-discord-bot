@@ -7,7 +7,7 @@ from nbt import nbt
 from nbt.nbt import TAG_Compound, TAG_Int, TAG_List, TAG_Long, TAG_String
 from pydactyl import PterodactylClient
 
-from utils.objects import DevilFruit
+from utils.objects import DevilFruit, Module
 
 
 def chunks(l, n):
@@ -94,3 +94,8 @@ def list_inventory_fruits(data: list[DevilFruit], nbt_data: dict):
             if fruit_name := inventory.get(f"fruit-{i}"):
                 fruits.append(get(data, qualified_name=fruit_name))
     return fruits
+
+
+def get_modules(path: Path):
+    for module in path.rglob("*.py"):
+        yield Module(base_path=path.parent, path=module)

@@ -6,6 +6,7 @@ import yaml
 from discord.ext import commands
 from pydactyl import PterodactylClient
 
+from utils.functions import get_modules
 from utils.objects import BotConfig, Object
 
 
@@ -20,6 +21,8 @@ class TreasureMiner(commands.Bot):
             chunk_guilds_at_startup=True,
             allowed_mentions=discord.AllowedMentions(replied_user=False),
         )
+        self.path = Path(__file__).parent
+        self.modules_path = self.path.joinpath("modules")
         self.remove_command("help")
         self.load_config()
 
@@ -30,20 +33,18 @@ class TreasureMiner(commands.Bot):
 
     async def setup_constants(self):
         # Setup constants for the bot to use
+        self._last_exception = None
         self.constants = Object()
         self.GOLDEN_COLOR = 0xFFD700
-        self.constants.ptero_client = PterodactylClient(
-            self.config.ptero_server, self.config.ptero_api_key
-        )
+        # self.constants.ptero_client = PterodactylClient(
+        #     self.config.ptero_server, self.config.ptero_api_key
+        # )
 
     async def load_modules(self):
         # Loads bot's modules
-        modules_path = Path("./modules")
-        for module in modules_path.rglob("*.py"):
-            module_path = module.relative_to(modules_path.parent)
-            module_path = ".".join(str(module_path).split("\\")[:-1] + [module.stem])
-            await self.load_extension(module_path)
-            print(f"Loaded module {module.stem}")
+        for module in get_modules(self.modules_path):
+            await self.load_extension(module.spec)
+            print(f"Loaded module {module.name}")
 
     async def setup_hook(self):
         # Things to do when the bot is ready to go
@@ -58,6 +59,11 @@ class TreasureMiner(commands.Bot):
     def run(self, **kwargs):
         # Run the bot
         super().run(self.config.discord_api_key, **kwargs)
+
+    async def on_message(self, message):
+        if message.author.id not in self.bot.config.bot_owners:
+            return
+        await self.process_commands(message)
 
 
 if __name__ == "__main__":

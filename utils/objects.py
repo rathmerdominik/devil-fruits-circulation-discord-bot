@@ -7,28 +7,30 @@ class Object:
     ...
 
 
-class DFCircConfig(BaseModel):
-    channel: int
-    golden_box: int
-    iron_box: int
-    wooden_box: int
-
-
-class BotConfig(BaseModel):
-    world_name: str
-    ptero_server_id: str
-    ptero_server: str
-    ptero_api_key: str
-    discord_api_key: str
-    discord_server_id: int
-    bot_owners: list[int] = []
-
-
 class DevilFruit(BaseModel):
     name: str
     format_name: str
     qualified_name: str
     rarity: str
+
+
+class CrewMember(BaseModel):
+    username: str
+    isCaptain: bool
+    idMost: int
+    idLeast: int
+
+
+class Crew(BaseModel):
+    name: str
+    members: list[CrewMember]
+    jollyRoger: dict
+
+
+class MinecraftPlayer(BaseModel):
+    id: str
+    name: str
+    properties: list[dict]
 
 
 class Module(BaseModel):

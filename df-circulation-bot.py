@@ -3,11 +3,14 @@ from pathlib import Path
 
 import discord
 import yaml
+from aiohttp import ClientSession
 from discord.ext import commands
 from pydactyl import PterodactylClient
+from pydactyl.exceptions import ClientConfigError
 
+from utils.config_models import BotConfig
 from utils.functions import get_modules
-from utils.objects import BotConfig, Object
+from utils.objects import Object
 
 
 class TreasureMiner(commands.Bot):
@@ -21,6 +24,7 @@ class TreasureMiner(commands.Bot):
             chunk_guilds_at_startup=True,
             allowed_mentions=discord.AllowedMentions(replied_user=False),
         )
+        self.modules_ready = asyncio.Event()
         self.path = Path(__file__).parent
         self.modules_path = self.path.joinpath("modules")
         self.remove_command("help")
@@ -36,9 +40,17 @@ class TreasureMiner(commands.Bot):
         self._last_exception = None
         self.constants = Object()
         self.GOLDEN_COLOR = 0xFFD700
-        self.constants.ptero_client = PterodactylClient(
-            self.config.ptero_server, self.config.ptero_api_key
-        )
+        self.constants.RSession = ClientSession()
+        try:
+            self.constants.ptero_client = PterodactylClient(
+                self.config.ptero_server, self.config.ptero_api_key
+            )
+        except ClientConfigError:
+            self.constants.ptero_client = None
+            print(
+                "Unable to connect to Pterodactyl server."
+                "\nPlease check your config.yaml file and ensure that the Pterodactyl server and API key are correct."
+            )
 
     async def load_modules(self):
         """Loads all modules."""
@@ -55,6 +67,7 @@ class TreasureMiner(commands.Bot):
     async def change_status(self):
         """Changes the bot's status after a successful startup."""
         await self.wait_until_ready()
+        self.modules_ready.set()
         await self.change_presence(status=discord.Status.online)
 
     def run(self, **kwargs):
@@ -63,7 +76,7 @@ class TreasureMiner(commands.Bot):
 
     async def on_message(self, message):
         """Handles messages and commands sent to the bot by owners."""
-        if message.author.id not in self.bot.config.bot_owners:
+        if message.author.id not in self.config.bot_owners:
             return
         await self.process_commands(message)
 

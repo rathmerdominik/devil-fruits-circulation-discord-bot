@@ -3,12 +3,13 @@ from pathlib import Path
 from typing import Iterable
 
 import yaml
+from aiohttp import ClientSession
 from discord.utils import get
 from nbt import nbt
-from nbt.nbt import TAG_Compound, TAG_Int, TAG_List, TAG_Long, TAG_String
+from nbt.nbt import TAG_Compound, TAG_Int, TAG_List, TAG_Long, TAG_String, TAG_Byte
 from pydactyl import PterodactylClient
 
-from utils.objects import BotConfig, DevilFruit, Module
+from utils.objects import DevilFruit, MinecraftPlayer, Module
 
 
 def chunks(l: Iterable, n: int) -> Iterable:
@@ -25,30 +26,19 @@ def convert_nbt_to_dict(data: nbt.NBTFile) -> dict:
             as_dict[key] = convert_nbt_to_dict(value)
         elif isinstance(value, TAG_List):
             as_dict[key] = [convert_nbt_to_dict(list_value) for list_value in value]
-        elif isinstance(value, (TAG_String, TAG_Int, TAG_Long)):
+        elif isinstance(value, (TAG_String, TAG_Int, TAG_Long, TAG_Byte)):
             as_dict[key] = value.value
         else:
             as_dict[key] = value
     return as_dict
 
 
-def get_ptero_file(
-    ptero_client: PterodactylClient, path: str, server_id: str
-) -> nbt.NBTFile:
+def get_ptero_file(ptero_client: PterodactylClient, path: str, server_id: str) -> bytes:
     """Get a nbt file from pterodactyl server."""
-    mine_mine_nbt_file = ptero_client.client.servers.files.get_file_contents(
+    return ptero_client.client.servers.files.get_file_contents(
         server_id,
         path,
     ).content
-    return nbt.NBTFile(fileobj=BytesIO(mine_mine_nbt_file))
-
-
-async def load_nbt(config: BotConfig, path: str) -> nbt.NBTFile:
-    """Load a nbt file."""
-    try:
-        return get_ptero_file(config.ptero_client, path, config.server_id)
-    except Exception as e:
-        print("mineminenomi.dat not existing. Wait for a player to choose a race")
 
 
 def yaml_load(path: Path, config_name: str = "config.yaml") -> dict:
@@ -112,3 +102,11 @@ def get_modules(path: Path) -> Iterable[Module]:
     """Get all modules in the modules folder recursively."""
     for module in path.rglob("*.py"):
         yield Module(base_path=path.parent, path=module)
+
+
+async def get_mc_player(session: ClientSession, player_id: str) -> dict:
+    """Get a player from the api."""
+    async with session.get(
+        f"https://sessionserver.mojang.com/session/minecraft/profile/{player_id}"
+    ) as r:
+        return MinecraftPlayer(await r.json())

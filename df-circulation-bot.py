@@ -126,8 +126,9 @@ async def build_formatted_message(config: dict, nbt_data: nbt) -> Embed:
         ),
         description="__**All available Devil Fruits**__",
         color=GOLDEN_COLOR,
+        timestamp=dt.datetime.utcnow()
     )
-    embed.set_footer(text="Circulation is updated every 5 minutes")
+    embed.set_footer(text="Circulation is updated every 5 minutes | Last updated")
 
     embed_formatted_fruits: list = []
 
